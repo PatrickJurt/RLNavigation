@@ -1,0 +1,6 @@
+name: RLNavigation
+version: ${project.version}
+main: ch.patrickjurt.rlnavigation.Main
+api-version: 1.21
+description: A Minecraft plugin for reinforcement-learning-based navigation.
+author: PatrickJurt
