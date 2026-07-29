@@ -5,9 +5,14 @@ import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.NameTagVisibility;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.Team;
 
 public final class Main extends JavaPlugin implements Listener {
+    private Team hideNameTeam;
 
     @Override
     public void onEnable() {
@@ -18,6 +23,40 @@ public final class Main extends JavaPlugin implements Listener {
             applyLocatorBarGamerule(world);
         }
         getServer().getPluginManager().registerEvents(this, this);
+
+        // Prepare scoreboard team to hide name tags above players (keeps tab names)
+        try {
+            Scoreboard board = getServer().getScoreboardManager() != null
+                    ? getServer().getScoreboardManager().getMainScoreboard()
+                    : null;
+            if (board != null) {
+                hideNameTeam = board.getTeam("rl_no_tag");
+                if (hideNameTeam == null) hideNameTeam = board.registerNewTeam("rl_no_tag");
+                hideNameTeam.setNameTagVisibility(NameTagVisibility.NEVER);
+                // add existing online players
+                for (org.bukkit.entity.Player p : getServer().getOnlinePlayers()) {
+                    try {
+                        hideNameTeam.addEntry(p.getName());
+                    } catch (Throwable ignored) {
+                    }
+                }
+                getLogger().info("Name tags above players will be hidden via team 'rl_no_tag'.");
+            } else {
+                getLogger().warning("Scoreboard manager unavailable; cannot hide name tags.");
+            }
+        } catch (Throwable t) {
+            getLogger().warning("Failed to prepare name-tag-hiding team: " + t.getMessage());
+        }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        if (hideNameTeam != null) {
+            try {
+                hideNameTeam.addEntry(event.getPlayer().getName());
+            } catch (Throwable ignored) {
+            }
+        }
     }
 
     @EventHandler
